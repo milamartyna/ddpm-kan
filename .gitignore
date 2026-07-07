@@ -3,11 +3,11 @@ __pycache__/
 .venv/
 .env
 
-data/
-datasets/
-runs/
-outputs/
-checkpoints/
+/data/
+/datasets/
+/runs/
+/outputs/
+/checkpoints/
 *.pt
 *.pth
 *.ckpt
