@@ -1,0 +1,36 @@
+experiment:
+  id: E0_cifar10_baseline_10ep_test
+  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E0_cifar10_baseline_10ep_test
+
+dataset:
+  name: CIFAR10
+  data_dir: /content/data
+  archive_path: /content/drive/MyDrive/magisterka_ddpm_kan/datasets/cifar-10-python.tar.gz
+  extracted_dir: /content/data/cifar-10-batches-py
+  prepare_from_archive: true
+  image_size: 32
+  channels: 3
+  batch_size: 64
+  num_workers: 2
+
+model:
+  type: unet
+  base_channels: 64
+  channel_multipliers: [1, 2, 4]
+  time_embedding_dim: 256
+  kan_position: none
+
+diffusion:
+  timesteps: 1000
+  beta_schedule: linear
+  beta_start: 0.0001
+  beta_end: 0.02
+
+training:
+  epochs: 10
+  learning_rate: 0.0001
+  optimizer: AdamW
+  seed: 42
+  mixed_precision: false
+  save_checkpoint_every: 5
+  save_samples_every: 5
