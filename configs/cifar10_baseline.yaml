@@ -5,6 +5,9 @@ experiment:
 dataset:
   name: CIFAR10
   data_dir: /content/data
+  archive_path: /content/drive/MyDrive/magisterka_ddpm_kan/datasets/cifar-10-python.tar.gz
+  extracted_dir: /content/data/cifar-10-batches-py
+  prepare_from_archive: true
   image_size: 32
   channels: 3
   batch_size: 64

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 
-from ddpm_kan.data.datamodules import get_cifar10_dataloader
+from ddpm_kan.data.datamodules import get_dataloader
 from ddpm_kan.utils.config import load_config
 from ddpm_kan.utils.environment import save_environment_metadata
 from ddpm_kan.utils.reproducibility import set_seed
@@ -44,12 +44,7 @@ def main():
 
     dataset_config = config["dataset"]
 
-    train_loader = get_cifar10_dataloader(
-        data_dir=dataset_config["data_dir"],
-        batch_size=dataset_config["batch_size"],
-        num_workers=dataset_config["num_workers"],
-        train=True,
-    )
+    train_loader = get_dataloader(dataset_config, train=True)
 
     images, labels = next(iter(train_loader))
 
@@ -62,7 +57,7 @@ def main():
     images = images.to(device)
     print(f"Images moved to device: {images.device}")
 
-    print("Setup test completed successfully.")
+    print("Setup completed successfully.")
 
 
 if __name__ == "__main__":
