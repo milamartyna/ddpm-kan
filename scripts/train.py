@@ -20,6 +20,7 @@ from ddpm_kan.utils.reproducibility import set_seed
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
+    parser.add_argument("--resume", type=str, default=None)
     return parser.parse_args()
 
 
@@ -86,6 +87,16 @@ def main():
         weight_decay=config["training"].get("weight_decay", 0.0),
     )
 
+    start_epoch = 1
+
+    if args.resume is not None:
+        checkpoint = torch.load(args.resume, map_location=device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_epoch = checkpoint["epoch"] + 1
+
+    print(f"Resuming training from epoch {start_epoch}")
+
     num_params = count_parameters(model)
     print(f"Trainable parameters: {num_params:,}")
 
@@ -102,7 +113,7 @@ def main():
     epochs = config["training"]["epochs"]
     save_every = config["training"]["save_checkpoint_every"]
 
-    for epoch in range(1, epochs + 1):
+    for epoch in range(start_epoch, epochs + 1):
         model.train()
         epoch_start = time.time()
         total_loss = 0.0
@@ -141,9 +152,10 @@ def main():
             f"time={epoch_time:.2f}s"
         )
 
-        with open(log_path, "a", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow([epoch, avg_loss, epoch_time])
+        if not log_path.exists() or args.resume is None:
+            with open(log_path, "w", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+                writer.writerow([epoch, avg_loss, epoch_time])
 
         if epoch % save_every == 0:
             save_checkpoint(model, optimizer, epoch, output_dir)
