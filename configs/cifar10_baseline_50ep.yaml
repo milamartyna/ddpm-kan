@@ -1,6 +1,6 @@
 experiment:
-  id: E0_cifar10_baseline_50ep_test
-  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E0_cifar10_baseline_50ep_test
+  id: E0_cifar10_baseline_50ep
+  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E0_cifar10_baseline_50ep
 
 dataset:
   name: CIFAR10

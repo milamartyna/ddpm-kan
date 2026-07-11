@@ -106,9 +106,10 @@ def main():
 
     log_path = output_dir / "train_log.csv"
 
-    with open(log_path, "w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerow(["epoch", "avg_loss", "epoch_time_seconds"])
+    if args.resume is None or not log_path.exists() or log_path.stat().st_size == 0:
+        with open(log_path, "w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(["epoch", "avg_loss", "epoch_time_seconds"])
 
     epochs = config["training"]["epochs"]
     save_every = config["training"]["save_checkpoint_every"]
