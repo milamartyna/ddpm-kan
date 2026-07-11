@@ -46,6 +46,27 @@ def save_checkpoint(model, optimizer, epoch, output_dir):
     print(f"Saved checkpoint: {checkpoint_path}")
 
 
+def ensure_log_file(log_path: Path):
+    """
+    Ensures train_log.csv exists and has a header.
+    If an old log exists without a header, the header is prepended.
+    """
+    header = "epoch,avg_loss,epoch_time_seconds\n"
+
+    if not log_path.exists() or log_path.stat().st_size == 0:
+        with open(log_path, "w", encoding="utf-8", newline="") as file:
+            file.write(header)
+        return
+
+    with open(log_path, "r", encoding="utf-8") as file:
+        content = file.read()
+
+    if not content.startswith("epoch,avg_loss,epoch_time_seconds"):
+        with open(log_path, "w", encoding="utf-8", newline="") as file:
+            file.write(header)
+            file.write(content)
+
+
 def main():
     args = parse_args()
     config = load_config(args.config)
@@ -94,25 +115,31 @@ def main():
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
-
-    print(f"Resuming training from epoch {start_epoch}")
+        print(f"Loaded checkpoint: {args.resume}")
+        print(f"Resuming training from epoch {start_epoch}")
+    else:
+        print("Starting training from scratch.")
 
     num_params = count_parameters(model)
     print(f"Trainable parameters: {num_params:,}")
 
     with open(output_dir / "model_summary.txt", "w", encoding="utf-8") as file:
-        file.write(f"Model: DDPM + U-Net\n")
+        file.write("Model: DDPM + U-Net\n")
         file.write(f"Trainable parameters: {num_params}\n")
 
     log_path = output_dir / "train_log.csv"
-
-    if args.resume is None or not log_path.exists() or log_path.stat().st_size == 0:
-        with open(log_path, "w", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow(["epoch", "avg_loss", "epoch_time_seconds"])
+    print(f"Training log path: {log_path}")
+    ensure_log_file(log_path)
 
     epochs = config["training"]["epochs"]
     save_every = config["training"]["save_checkpoint_every"]
+
+    if start_epoch > epochs:
+        print(
+            f"Nothing to train: start_epoch={start_epoch}, "
+            f"target epochs={epochs}."
+        )
+        return
 
     for epoch in range(start_epoch, epochs + 1):
         model.train()
@@ -153,14 +180,14 @@ def main():
             f"time={epoch_time:.2f}s"
         )
 
-        if not log_path.exists() or args.resume is None:
-            with open(log_path, "w", newline="", encoding="utf-8") as file:
-                writer = csv.writer(file)
-                writer.writerow([epoch, avg_loss, epoch_time])
+        with open(log_path, "a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow([epoch, avg_loss, epoch_time])
 
         if epoch % save_every == 0:
             save_checkpoint(model, optimizer, epoch, output_dir)
 
+    save_checkpoint(model, optimizer, epochs, output_dir)
     print("Training completed successfully.")
 
 
