@@ -3,8 +3,8 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from torchvision.utils import make_grid, save_image
 
+from ddpm_kan.evaluation.visualization import save_image_grid, save_individual_images
 from ddpm_kan.models.ddpm import DDPM
 from ddpm_kan.models.unet import UNet
 from ddpm_kan.utils.config import load_config
@@ -16,22 +16,8 @@ def parse_args():
     parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--num_samples", type=int, default=64)
-    parser.add_argument("--scale", type=int, default=8)
+    parser.add_argument("--scale", type=int, default=2)
     return parser.parse_args()
-
-
-def unnormalize(x):
-    return (x + 1.0) / 2.0
-
-
-def save_samples_for_report(samples, path, nrow=8, scale=8):
-    samples = unnormalize(samples).clamp(0, 1)
-
-    if scale > 1:
-        samples = F.interpolate(samples, scale_factor=scale, mode="nearest")
-
-    grid = make_grid(samples, nrow=nrow, padding=4, pad_value=1.0)
-    save_image(grid, path)
 
 
 def main():
@@ -73,11 +59,20 @@ def main():
         batch_size=args.num_samples,
     )
 
-    save_samples_for_report(
+    save_image_grid(
         samples,
-        samples_dir / f"samples_epoch_{checkpoint['epoch']}_report.png",
+        samples_dir / f"samples_epoch_{checkpoint['epoch']}_grid.png",
         nrow=8,
         scale=args.scale,
+        padding=2,
+        use_nearest=True,
+    )
+
+    save_individual_images(
+        samples[:16],
+        samples_dir / f"samples_epoch_{checkpoint['epoch']}_individual",
+        scale=args.scale,
+        use_nearest=True,
     )
 
     print(f"Saved samples to: {samples_dir}")
