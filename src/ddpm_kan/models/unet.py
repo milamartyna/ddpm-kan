@@ -131,17 +131,24 @@ class UNet(nn.Module):
         self.mid2 = ResBlock(c3, c3, time_embedding_dim)
 
         if kan_position == "bottleneck":
+            self.kan_encoder2 = nn.Identity()
+            self.kan_encoder3 = nn.Identity()
+
             self.kan_bottleneck = KANBottleneckBlock(
                 channels=c3,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
                 residual_scale=kan_residual_scale,
             )
+
             self.kan_decoder1 = nn.Identity()
             self.kan_decoder2 = nn.Identity()
 
         elif kan_position == "decoder":
+            self.kan_encoder2 = nn.Identity()
+            self.kan_encoder3 = nn.Identity()
             self.kan_bottleneck = nn.Identity()
+
             self.kan_decoder1 = KANBottleneckBlock(
                 channels=c2,
                 grid_size=kan_grid_size,
@@ -155,7 +162,27 @@ class UNet(nn.Module):
                 residual_scale=kan_residual_scale,
             )
 
+        elif kan_position == "encoder_lowres":
+            self.kan_encoder2 = KANBottleneckBlock(
+                channels=c2,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+            self.kan_encoder3 = KANBottleneckBlock(
+                channels=c3,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+
+            self.kan_bottleneck = nn.Identity()
+            self.kan_decoder1 = nn.Identity()
+            self.kan_decoder2 = nn.Identity()
+
         elif kan_position == "none":
+            self.kan_encoder2 = nn.Identity()
+            self.kan_encoder3 = nn.Identity()
             self.kan_bottleneck = nn.Identity()
             self.kan_decoder1 = nn.Identity()
             self.kan_decoder2 = nn.Identity()
@@ -186,9 +213,11 @@ class UNet(nn.Module):
         x = self.downsample1(skip1)
 
         skip2 = self.down2(x, time_embedding)
+        skip2 = self.kan_encoder2(skip2)
         x = self.downsample2(skip2)
 
         skip3 = self.down3(x, time_embedding)
+        skip3 = self.kan_encoder3(skip3)
 
         x = self.mid1(skip3, time_embedding)
         x = self.mid2(x, time_embedding)
