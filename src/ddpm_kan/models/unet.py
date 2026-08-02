@@ -137,8 +137,29 @@ class UNet(nn.Module):
                 spline_order=kan_spline_order,
                 residual_scale=kan_residual_scale,
             )
+            self.kan_decoder1 = nn.Identity()
+            self.kan_decoder2 = nn.Identity()
+
+        elif kan_position == "decoder":
+            self.kan_bottleneck = nn.Identity()
+            self.kan_decoder1 = KANBottleneckBlock(
+                channels=c2,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+            self.kan_decoder2 = KANBottleneckBlock(
+                channels=c1,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+
         elif kan_position == "none":
             self.kan_bottleneck = nn.Identity()
+            self.kan_decoder1 = nn.Identity()
+            self.kan_decoder2 = nn.Identity()
+
         else:
             raise ValueError(f"Unsupported kan_position: {kan_position}")
 
@@ -175,10 +196,12 @@ class UNet(nn.Module):
 
         x = torch.cat([x, skip3], dim=1)
         x = self.up1(x, time_embedding)
+        x = self.kan_decoder1(x)
         x = self.upsample1(x)
 
         x = torch.cat([x, skip2], dim=1)
         x = self.up2(x, time_embedding)
+        x = self.kan_decoder2(x)
         x = self.upsample2(x)
 
         x = torch.cat([x, skip1], dim=1)
