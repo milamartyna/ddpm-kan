@@ -2,6 +2,7 @@ import math
 
 import torch
 from torch import nn
+from ddpm_kan.models.kan_layer import KANBottleneckBlock
 
 
 def get_num_groups(num_channels: int, max_groups: int = 8) -> int:
@@ -94,6 +95,10 @@ class Upsample(nn.Module):
 class UNet(nn.Module):
     def __init__(
         self,
+        kan_position: str = "none",
+        kan_grid_size: int = 5,
+        kan_spline_order: int = 3,
+        kan_residual_scale: float = 0.1,
         in_channels: int = 3,
         out_channels: int = 3,
         base_channels: int = 64,
@@ -125,6 +130,18 @@ class UNet(nn.Module):
         self.mid1 = ResBlock(c3, c3, time_embedding_dim)
         self.mid2 = ResBlock(c3, c3, time_embedding_dim)
 
+        if kan_position == "bottleneck":
+            self.kan_bottleneck = KANBottleneckBlock(
+                channels=c3,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+        elif kan_position == "none":
+            self.kan_bottleneck = nn.Identity()
+        else:
+            raise ValueError(f"Unsupported kan_position: {kan_position}")
+
         self.up1 = ResBlock(c3 + c3, c2, time_embedding_dim)
         self.upsample1 = Upsample(c2)
 
@@ -154,6 +171,7 @@ class UNet(nn.Module):
 
         x = self.mid1(skip3, time_embedding)
         x = self.mid2(x, time_embedding)
+        x = self.kan_bottleneck(x)
 
         x = torch.cat([x, skip3], dim=1)
         x = self.up1(x, time_embedding)

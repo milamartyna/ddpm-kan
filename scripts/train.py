@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from ddpm_kan.data.datamodules import get_dataloader
 from ddpm_kan.models.ddpm import DDPM
-from ddpm_kan.models.unet import UNet
+from ddpm_kan.models.model_factory import build_model
 from ddpm_kan.utils.config import load_config
 from ddpm_kan.utils.environment import save_environment_metadata
 from ddpm_kan.utils.reproducibility import set_seed
@@ -95,12 +95,7 @@ def main():
         device=device,
     )
 
-    model = UNet(
-        in_channels=config["dataset"]["channels"],
-        out_channels=config["dataset"]["channels"],
-        base_channels=config["model"]["base_channels"],
-        time_embedding_dim=config["model"]["time_embedding_dim"],
-    ).to(device)
+    model = build_model(config).to(device)
 
     optimizer = AdamW(
         model.parameters(),

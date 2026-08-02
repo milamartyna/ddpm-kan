@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from ddpm_kan.evaluation.visualization import save_image_grid, save_individual_images
 from ddpm_kan.models.ddpm import DDPM
-from ddpm_kan.models.unet import UNet
+from ddpm_kan.models.model_factory import build_model
 from ddpm_kan.utils.config import load_config
 from ddpm_kan.utils.reproducibility import set_seed
 
@@ -33,12 +33,7 @@ def main():
     samples_dir = output_dir / "samples"
     samples_dir.mkdir(parents=True, exist_ok=True)
 
-    model = UNet(
-        in_channels=config["dataset"]["channels"],
-        out_channels=config["dataset"]["channels"],
-        base_channels=config["model"]["base_channels"],
-        time_embedding_dim=config["model"]["time_embedding_dim"],
-    ).to(device)
+    model = build_model(config).to(device)
 
     checkpoint = torch.load(args.checkpoint, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])
