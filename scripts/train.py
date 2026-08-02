@@ -182,7 +182,9 @@ def main():
         if epoch % save_every == 0:
             save_checkpoint(model, optimizer, epoch, output_dir)
 
-    save_checkpoint(model, optimizer, epochs, output_dir)
+    if epochs % save_every != 0:
+        save_checkpoint(model, optimizer, epochs, output_dir)
+
     print("Training completed successfully.")
 
 
