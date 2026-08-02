@@ -2,7 +2,6 @@ import argparse
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 
 from ddpm_kan.evaluation.visualization import save_image_grid, save_individual_images
 from ddpm_kan.models.ddpm import DDPM
@@ -15,6 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--checkpoint", type=str, required=True)
+    parser.add_argument("--nrow", type=int, default=8)
     parser.add_argument("--num_samples", type=int, default=64)
     parser.add_argument("--scale", type=int, default=2)
     return parser.parse_args()
@@ -56,15 +56,16 @@ def main():
 
     save_image_grid(
         samples,
-        samples_dir / f"samples_epoch_{checkpoint['epoch']}_grid.png",
-        nrow=8,
+        samples_dir /
+        f"samples_epoch_{checkpoint['epoch']}_n{args.num_samples}_r{args.nrow}_s{args.scale}.png",
+        nrow=args.nrow,
         scale=args.scale,
         padding=2,
         use_nearest=True,
     )
 
     save_individual_images(
-        samples[:16],
+        samples,
         samples_dir / f"samples_epoch_{checkpoint['epoch']}_individual",
         scale=args.scale,
         use_nearest=True,

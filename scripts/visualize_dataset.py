@@ -12,6 +12,7 @@ from ddpm_kan.utils.reproducibility import set_seed
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
+    parser.add_argument("--nrow", type=int, default=8)
     parser.add_argument("--num_images", type=int, default=64)
     parser.add_argument("--scale", type=int, default=4)
     return parser.parse_args()
@@ -34,8 +35,9 @@ def main():
 
     save_image_grid(
         images,
-        output_dir / "cifar10_train_grid.png",
-        nrow=8,
+        output_dir /
+        f"cifar10_train_grid_n{args.num_images}_r{args.nrow}_s{args.scale}.png",
+        nrow=args.nrow,
         scale=args.scale,
         padding=2,
         use_nearest=True,
