@@ -1,6 +1,6 @@
 experiment:
-  id: E2_cifar10_kan_decoder_smoke
-  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E2_cifar10_kan_decoder_smoke
+  id: E2_cifar10_kan_decoder_100ep
+  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E2_cifar10_kan_decoder_100ep
 
 dataset:
   name: CIFAR10
@@ -30,10 +30,10 @@ diffusion:
   beta_end: 0.02
 
 training:
-  epochs: 1
+  epochs: 100
   learning_rate: 0.0001
   optimizer: AdamW
   seed: 42
   mixed_precision: false
-  save_checkpoint_every: 1
+  save_checkpoint_every: 5
   save_samples_every: 1
