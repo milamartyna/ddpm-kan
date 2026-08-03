@@ -180,6 +180,35 @@ class UNet(nn.Module):
             self.kan_decoder1 = nn.Identity()
             self.kan_decoder2 = nn.Identity()
 
+        elif kan_position == "encoder_decoder_lowres":
+            self.kan_encoder2 = KANBottleneckBlock(
+                channels=c2,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+            self.kan_encoder3 = KANBottleneckBlock(
+                channels=c3,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+
+            self.kan_bottleneck = nn.Identity()
+
+            self.kan_decoder1 = KANBottleneckBlock(
+                channels=c2,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+            self.kan_decoder2 = KANBottleneckBlock(
+                channels=c1,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
+
         elif kan_position == "none":
             self.kan_encoder2 = nn.Identity()
             self.kan_encoder3 = nn.Identity()
