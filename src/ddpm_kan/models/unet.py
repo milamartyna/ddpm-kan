@@ -143,6 +143,7 @@ class UNet(nn.Module):
 
             self.kan_decoder1 = nn.Identity()
             self.kan_decoder2 = nn.Identity()
+            self.middle_kan = nn.Identity()
 
         elif kan_position == "decoder":
             self.kan_encoder2 = nn.Identity()
@@ -161,6 +162,7 @@ class UNet(nn.Module):
                 spline_order=kan_spline_order,
                 residual_scale=kan_residual_scale,
             )
+            self.middle_kan = nn.Identity()
 
         elif kan_position == "encoder_lowres":
             self.kan_encoder2 = KANBottleneckBlock(
@@ -179,6 +181,7 @@ class UNet(nn.Module):
             self.kan_bottleneck = nn.Identity()
             self.kan_decoder1 = nn.Identity()
             self.kan_decoder2 = nn.Identity()
+            self.middle_kan = nn.Identity()
 
         elif kan_position == "encoder_decoder_lowres":
             self.kan_encoder2 = KANBottleneckBlock(
@@ -208,6 +211,21 @@ class UNet(nn.Module):
                 spline_order=kan_spline_order,
                 residual_scale=kan_residual_scale,
             )
+            self.middle_kan = nn.Identity()
+
+        elif kan_position == "middle_replace":
+            self.kan_encoder2 = nn.Identity()
+            self.kan_encoder3 = nn.Identity()
+            self.kan_bottleneck = nn.Identity()
+            self.kan_decoder1 = nn.Identity()
+            self.kan_decoder2 = nn.Identity()
+
+            self.middle_kan = KANBottleneckBlock(
+                channels=c3,
+                grid_size=kan_grid_size,
+                spline_order=kan_spline_order,
+                residual_scale=kan_residual_scale,
+            )
 
         elif kan_position == "none":
             self.kan_encoder2 = nn.Identity()
@@ -215,6 +233,7 @@ class UNet(nn.Module):
             self.kan_bottleneck = nn.Identity()
             self.kan_decoder1 = nn.Identity()
             self.kan_decoder2 = nn.Identity()
+            self.middle_kan = nn.Identity()
 
         else:
             raise ValueError(f"Unsupported kan_position: {kan_position}")
@@ -249,7 +268,14 @@ class UNet(nn.Module):
         skip3 = self.kan_encoder3(skip3)
 
         x = self.mid1(skip3, time_embedding)
-        x = self.mid2(x, time_embedding)
+        x = self.mid1(skip3, time_embedding)
+
+        if self.kan_position == "middle_replace":
+            x = self.middle_kan(x)
+        else:
+            x = self.mid2(x, time_embedding)
+            x = self.kan_bottleneck(x)
+
         x = self.kan_bottleneck(x)
 
         x = torch.cat([x, skip3], dim=1)
