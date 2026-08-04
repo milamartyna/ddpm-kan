@@ -1,6 +1,6 @@
 experiment:
-  id: E5_cifar10_kan_middle_replace_smoke
-  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E5_cifar10_kan_middle_replace_smoke
+  id: E5_cifar10_kan_middle_replace_100ep
+  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E5_cifar10_kan_middle_replace_100ep
 
 dataset:
   name: CIFAR10
@@ -30,7 +30,7 @@ diffusion:
   beta_end: 0.02
 
 training:
-  epochs: 1
+  epochs: 100
   learning_rate: 0.0001
   optimizer: AdamW
   seed: 42
