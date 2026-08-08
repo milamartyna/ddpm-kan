@@ -3,6 +3,21 @@ from pathlib import Path
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from torchmetrics import metric
+
+METRIC_LABELS = {
+    "noise_mse": "MSE przewidywanego szumu",
+    "x0_mse": "MSE rekonstrukcji obrazu",
+    "psnr": "PSNR [dB]",
+    "ssim": "SSIM",
+}
+
+DELTA_LABELS = {
+    "noise_mse": r"$\Delta$ MSE szumu względem E0",
+    "x0_mse": r"$\Delta$ MSE rekonstrukcji względem E0",
+    "psnr": r"$\Delta$ PSNR względem E0 [dB]",
+    "ssim": r"$\Delta$ SSIM względem E0",
+}
 
 
 def parse_model_arg(arg: str):
@@ -24,9 +39,8 @@ def plot_metric_raw(df, metric, output_dir):
             label=model_name,
         )
 
-    plt.xlabel("Timestep")
-    plt.ylabel(metric)
-    plt.title(f"{metric} by diffusion timestep")
+    plt.xlabel(r"Krok dyfuzji $t$")
+    plt.ylabel(METRIC_LABELS[metric])
     plt.grid(True, alpha=0.3)
     plt.legend(fontsize=8)
     plt.tight_layout()
@@ -62,9 +76,8 @@ def plot_metric_delta_vs_baseline(df, metric, output_dir, baseline_name="E0_base
         )
 
     plt.axhline(0, linestyle="--", linewidth=1)
-    plt.xlabel("Timestep")
-    plt.ylabel(f"Delta {metric} vs baseline")
-    plt.title(f"Delta {metric} vs E0 baseline")
+    plt.xlabel(r"Krok dyfuzji $t$")
+    plt.ylabel(DELTA_LABELS[metric])
     plt.grid(True, alpha=0.3)
     plt.legend(fontsize=8)
     plt.tight_layout()
@@ -92,9 +105,8 @@ def plot_metric_zoom(df, metric, output_dir, timesteps, suffix):
             label=model_name,
         )
 
-    plt.xlabel("Timestep")
-    plt.ylabel(metric)
-    plt.title(f"{metric} by diffusion timestep ({suffix})")
+    plt.xlabel(r"Krok dyfuzji $t$")
+    plt.ylabel(METRIC_LABELS[metric])
     plt.grid(True, alpha=0.3)
     plt.legend(fontsize=8)
     plt.tight_layout()
