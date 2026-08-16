@@ -2,7 +2,9 @@ import math
 
 import torch
 from torch import nn
+
 from ddpm_kan.models.kan_layer import KANBottleneckBlock
+from ddpm_kan.models.mlp_layer import MLPBottleneckBlock
 
 
 def get_num_groups(num_channels: int, max_groups: int = 8) -> int:
@@ -99,6 +101,9 @@ class UNet(nn.Module):
         kan_grid_size: int = 5,
         kan_spline_order: int = 3,
         kan_residual_scale: float = 0.1,
+        mlp_position: str = "none",
+        mlp_residual_scale: float = 0.1,
+        mlp_hidden_features: int | None = None,
         in_channels: int = 3,
         out_channels: int = 3,
         base_channels: int = 64,
@@ -111,6 +116,13 @@ class UNet(nn.Module):
         c3 = base_channels * 4
 
         self.kan_position = kan_position
+        self.mlp_position = mlp_position
+
+        if kan_position != "none" and mlp_position != "none":
+            raise ValueError(
+                "Only one of `kan_position` or `mlp_position` may be active at a time. "
+                f"Received kan_position={kan_position!r}, mlp_position={mlp_position!r}."
+            )
 
         self.time_mlp = nn.Sequential(
             SinusoidalTimeEmbedding(time_embedding_dim),
@@ -244,6 +256,39 @@ class UNet(nn.Module):
         else:
             raise ValueError(f"Unsupported kan_position: {kan_position}")
 
+        if mlp_position == "encoder_decoder_lowres":
+            self.mlp_encoder2 = MLPBottleneckBlock(
+                channels=c2,
+                hidden_features=mlp_hidden_features,
+                residual_scale=mlp_residual_scale,
+            )
+            self.mlp_encoder3 = MLPBottleneckBlock(
+                channels=c3,
+                hidden_features=mlp_hidden_features,
+                residual_scale=mlp_residual_scale,
+            )
+            self.mlp_bottleneck = nn.Identity()
+            self.mlp_decoder1 = MLPBottleneckBlock(
+                channels=c2,
+                hidden_features=mlp_hidden_features,
+                residual_scale=mlp_residual_scale,
+            )
+            self.mlp_decoder2 = MLPBottleneckBlock(
+                channels=c1,
+                hidden_features=mlp_hidden_features,
+                residual_scale=mlp_residual_scale,
+            )
+            self.middle_mlp = nn.Identity()
+        elif mlp_position == "none":
+            self.mlp_encoder2 = nn.Identity()
+            self.mlp_encoder3 = nn.Identity()
+            self.mlp_bottleneck = nn.Identity()
+            self.mlp_decoder1 = nn.Identity()
+            self.mlp_decoder2 = nn.Identity()
+            self.middle_mlp = nn.Identity()
+        else:
+            raise ValueError(f"Unsupported mlp_position: {mlp_position}")
+
         self.up1 = ResBlock(c3 + c3, c2, time_embedding_dim)
         self.upsample1 = Upsample(c2)
 
@@ -268,10 +313,12 @@ class UNet(nn.Module):
 
         skip2 = self.down2(x, time_embedding)
         skip2 = self.kan_encoder2(skip2)
+        skip2 = self.mlp_encoder2(skip2)
         x = self.downsample2(skip2)
 
         skip3 = self.down3(x, time_embedding)
         skip3 = self.kan_encoder3(skip3)
+        skip3 = self.mlp_encoder3(skip3)
 
         x = self.mid1(skip3, time_embedding)
 
@@ -280,15 +327,18 @@ class UNet(nn.Module):
         else:
             x = self.mid2(x, time_embedding)
             x = self.kan_bottleneck(x)
+            x = self.mlp_bottleneck(x)
 
         x = torch.cat([x, skip3], dim=1)
         x = self.up1(x, time_embedding)
         x = self.kan_decoder1(x)
+        x = self.mlp_decoder1(x)
         x = self.upsample1(x)
 
         x = torch.cat([x, skip2], dim=1)
         x = self.up2(x, time_embedding)
         x = self.kan_decoder2(x)
+        x = self.mlp_decoder2(x)
         x = self.upsample2(x)
 
         x = torch.cat([x, skip1], dim=1)
