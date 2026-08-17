@@ -1,5 +1,5 @@
 experiment:
-  id: E6_cifar10_mlp_encoder_decoder_lowres_100ep
+  id: E6_cifar10_mlp_encoder_decoder_lowres_100ep_seed123
   output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E6_cifar10_mlp_encoder_decoder_lowres_100ep_seed123
 
 dataset:
