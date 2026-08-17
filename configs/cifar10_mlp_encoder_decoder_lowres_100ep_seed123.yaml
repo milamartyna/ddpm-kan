@@ -1,0 +1,41 @@
+experiment:
+  id: E6_cifar10_mlp_encoder_decoder_lowres_100ep
+  output_dir: /content/drive/MyDrive/magisterka_ddpm_kan/runs/E6_cifar10_mlp_encoder_decoder_lowres_100ep_seed123
+
+dataset:
+  name: CIFAR10
+  data_dir: /content/data
+  archive_path: /content/drive/MyDrive/magisterka_ddpm_kan/datasets/cifar-10-python.tar.gz
+  extracted_dir: /content/data/cifar-10-batches-py
+  prepare_from_archive: true
+  image_size: 32
+  channels: 3
+  batch_size: 64
+  num_workers: 2
+
+model:
+  type: unet_mlp
+  base_channels: 64
+  channel_multipliers: [1, 2, 4]
+  time_embedding_dim: 256
+  kan_position: none
+  mlp_position: encoder_decoder_lowres
+  mlp_residual_scale: 0.1
+
+  # MLP hidden widths are matched to the equivalent KAN block size.
+  # For base_channels=64, this resolves to hidden_features=288.
+
+diffusion:
+  timesteps: 1000
+  beta_schedule: linear
+  beta_start: 0.0001
+  beta_end: 0.02
+
+training:
+  epochs: 100
+  learning_rate: 0.0001
+  optimizer: AdamW
+  seed: 123
+  mixed_precision: false
+  save_checkpoint_every: 1
+  save_samples_every: 1
