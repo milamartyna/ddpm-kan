@@ -18,6 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--checkpoint", type=str, required=True)
+    parser.add_argument("--eval_seed", type=int, default=None)
     parser.add_argument("--max_batches", type=int, default=50)
     parser.add_argument(
         "--timesteps",
@@ -41,7 +42,11 @@ def reconstruct_x0(noisy_images, predicted_noise, alpha_bar_t):
 def main():
     args = parse_args()
     config = load_config(args.config)
-    set_seed(config["training"]["seed"])
+    # use eval_seed if provided to ensure identical evaluation conditions
+    if args.eval_seed is not None:
+        set_seed(args.eval_seed)
+    else:
+        set_seed(config["training"]["seed"])
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
