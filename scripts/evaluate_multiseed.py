@@ -12,7 +12,7 @@ MODELS = {
     "E6": "E6_cifar10_mlp_encoder_decoder_lowres_100ep",
 }
 
-TRAINING_SEEDS = [42, 123, 456, 789, 2026, 3141]
+TRAINING_SEEDS = [42, 123, 456, 789, 2026, 3141, 999]
 
 EVAL_SEED = 42
 MAX_BATCHES = 50
@@ -29,7 +29,8 @@ def run_evaluation(run_dir: Path):
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Missing checkpoint: {ckpt_path}")
 
-    cmd = [sys.executable, str(script), "--config", str(config_path), "--checkpoint", str(ckpt_path), "--max_batches", str(MAX_BATCHES), "--eval_seed", str(EVAL_SEED)]
+    cmd = [sys.executable, str(script), "--config", str(config_path), "--checkpoint", str(
+        ckpt_path), "--max_batches", str(MAX_BATCHES), "--eval_seed", str(EVAL_SEED)]
     cmd += ["--timesteps"] + [str(t) for t in TIMESTEPS]
 
     print("Running:", " ".join(cmd))
@@ -38,31 +39,30 @@ def run_evaluation(run_dir: Path):
 
 def find_and_rename_metrics(run_dir: Path):
     metrics_dir = run_dir / "metrics"
+
     if not metrics_dir.exists():
         raise FileNotFoundError(f"Missing metrics dir: {metrics_dir}")
 
     original = metrics_dir / "denoising_metrics_epoch_100.csv"
-    target = metrics_dir / f"denoising_metrics_epoch_100_evalseed{EVAL_SEED}.csv"
+    target = (
+        metrics_dir
+        / f"denoising_metrics_epoch_100_evalseed{EVAL_SEED}.csv"
+    )
 
-    if original.exists():
-        if target.exists():
-            print(f"Target already exists, skipping move: {target}")
-        else:
-            original.rename(target)
-            print(f"Renamed {original} -> {target}")
-            return target
+    if not original.exists():
+        raise FileNotFoundError(
+            f"Expected fresh evaluation file not found: {original}"
+        )
 
-    # fallback: maybe evaluate script already wrote the evalseed file
+    # Nadpisz poprzednią ewaluację dla tego samego eval_seed
     if target.exists():
-        return target
+        target.unlink()
 
-    # try to find any matching file
-    for p in metrics_dir.glob("denoising_metrics_epoch_100*.csv"):
-        if p.name != target.name:
-            p.rename(target)
-            return target
+    original.rename(target)
 
-    raise FileNotFoundError(f"No denoising metrics found in {metrics_dir}")
+    print(f"Renamed {original} -> {target}")
+
+    return target
 
 
 def main():
@@ -81,10 +81,10 @@ def main():
 
             run_dir = RUNS_ROOT / run_name
             if not run_dir.exists():
-                print(f"Warning: run dir not found, skipping: {run_dir}")
-                continue
+                raise FileNotFoundError(f"Run dir not found: {run_dir}")
 
-            print(f"Evaluating model={model_key} training_seed={seed} at {run_dir}")
+            print(
+                f"Evaluating model={model_key} training_seed={seed} at {run_dir}")
             run_evaluation(run_dir)
             metrics_file = find_and_rename_metrics(run_dir)
 
@@ -101,7 +101,8 @@ def main():
     all_df = pd.concat(outputs, ignore_index=True)
 
     # reorder and ensure expected columns
-    expected = ["model", "training_seed", "eval_seed", "epoch", "timestep", "noise_mse", "x0_mse", "psnr", "ssim"]
+    expected = ["model", "training_seed", "eval_seed", "epoch",
+                "timestep", "noise_mse", "x0_mse", "psnr", "ssim"]
     # some per-run CSVs may not have model/training columns, so insert/rename
     if "epoch" not in all_df.columns:
         raise RuntimeError("Per-run CSVs missing 'epoch' column")
@@ -116,25 +117,33 @@ def main():
     # validations
     # 1) each model has exactly 6 training_seed
     checks = {}
-    for model_key in MODELS.keys():
+
+    expected_seeds = set(TRAINING_SEEDS)
+
+    for model_key in MODELS:
         model_df = all_df[all_df["model"] == model_key]
-        unique_seeds = model_df["training_seed"].nunique()
-        checks[f"model_{model_key}_training_seed_count"] = unique_seeds
 
-    # 2) each training_seed has 6 timesteps
-    seed_timestep_ok = True
-    for seed in TRAINING_SEEDS:
-        seed_df = all_df[all_df["training_seed"] == seed]
-        # number of unique timesteps per seed (across models)
-        # but requirement is per training_seed per model has 6 timesteps; we'll check grouped counts later
-        pass
+        actual_seeds = set(model_df["training_seed"].unique())
 
-    # check per (model, training_seed)
-    group_counts = all_df.groupby(["model", "training_seed"]).size()
+        if actual_seeds != expected_seeds:
+            raise RuntimeError(
+                f"{model_key}: seeds={actual_seeds}, "
+                f"expected={expected_seeds}"
+            )
 
-    for name, cnt in group_counts.items():
-        if cnt != len(TIMESTEPS):
-            print(f"Warning: (model,seed)={name} has {cnt} rows (expected {len(TIMESTEPS)})")
+        checks[f"model_{model_key}_training_seed_count"] = len(actual_seeds)
+
+    expected_timesteps = set(TIMESTEPS)
+
+    for (model, seed), group in all_df.groupby(["model", "training_seed"]):
+        actual_timesteps = set(group["timestep"].unique())
+
+        if actual_timesteps != expected_timesteps:
+            raise RuntimeError(
+                f"{model}, seed={seed}: "
+                f"timesteps={actual_timesteps}, "
+                f"expected={expected_timesteps}"
+            )
 
     # all eval_seed == EVAL_SEED
     if not (all_df["eval_seed"] == EVAL_SEED).all():
@@ -145,8 +154,13 @@ def main():
         raise RuntimeError("Found NaN in combined metrics")
 
     total_rows = len(all_df)
-    if total_rows != 108:
-        print(f"Warning: total rows = {total_rows}, expected 108")
+    expected_total_rows = len(MODELS) * len(TRAINING_SEEDS) * len(TIMESTEPS)
+
+    if total_rows != expected_total_rows:
+        raise RuntimeError(
+            f"Unexpected total rows: {total_rows}, "
+            f"expected {expected_total_rows}"
+        )
 
     out_path = out_dir / f"all_metrics_evalseed{EVAL_SEED}.csv"
     all_df.to_csv(out_path, index=False)
