@@ -108,6 +108,7 @@ class KANBottleneckBlock(nn.Module):
         channels: int,
         grid_size: int = 5,
         spline_order: int = 3,
+        grid_range: tuple[float, float] = (-3.0, 3.0),
         residual_scale: float = 0.1,
     ):
         super().__init__()
@@ -119,6 +120,7 @@ class KANBottleneckBlock(nn.Module):
             out_features=channels,
             grid_size=grid_size,
             spline_order=spline_order,
+            grid_range=grid_range,
         )
 
         self.residual_scale = nn.Parameter(torch.tensor(float(residual_scale)))

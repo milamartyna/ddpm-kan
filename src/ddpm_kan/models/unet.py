@@ -102,6 +102,7 @@ class UNet(nn.Module):
         kan_spline_order: int = 3,
         kan_residual_scale: float = 0.1,
         mlp_position: str = "none",
+        kan_grid_range: tuple[float, float] = (-3.0, 3.0),
         mlp_residual_scale: float = 0.1,
         mlp_hidden_features: int | None = None,
         in_channels: int = 3,
@@ -156,6 +157,7 @@ class UNet(nn.Module):
                 channels=c3,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
 
@@ -172,12 +174,14 @@ class UNet(nn.Module):
                 channels=c2,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
             self.kan_decoder2 = KANBottleneckBlock(
                 channels=c1,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
             self.middle_kan = nn.Identity()
@@ -187,12 +191,14 @@ class UNet(nn.Module):
                 channels=c2,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
             self.kan_encoder3 = KANBottleneckBlock(
                 channels=c3,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
 
@@ -206,12 +212,14 @@ class UNet(nn.Module):
                 channels=c2,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
             self.kan_encoder3 = KANBottleneckBlock(
                 channels=c3,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
 
@@ -221,12 +229,14 @@ class UNet(nn.Module):
                 channels=c2,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
             self.kan_decoder2 = KANBottleneckBlock(
                 channels=c1,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
             self.middle_kan = nn.Identity()
@@ -242,6 +252,7 @@ class UNet(nn.Module):
                 channels=c3,
                 grid_size=kan_grid_size,
                 spline_order=kan_spline_order,
+                grid_range=kan_grid_range,
                 residual_scale=kan_residual_scale,
             )
 

@@ -13,6 +13,9 @@ def build_model(config: dict):
         kan_position=model_config.get("kan_position", "none"),
         kan_grid_size=model_config.get("kan_grid_size", 5),
         kan_spline_order=model_config.get("kan_spline_order", 3),
+        kan_grid_range=tuple(
+            model_config.get("kan_grid_range", [-3.0, 3.0])
+        ),
         kan_residual_scale=model_config.get("kan_residual_scale", 0.1),
         mlp_position=model_config.get("mlp_position", "none"),
         mlp_residual_scale=model_config.get("mlp_residual_scale", 0.1),
